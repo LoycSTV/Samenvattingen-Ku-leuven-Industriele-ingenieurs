@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Databeheer Quiz – KU Leuven</title>
+<style>
+  :root {
+    --blue:    #29629B;
+    --blue-lt: #e8f0f8;
+    --green:   #27ae60;
+    --red:     #c0392b;
+    --orange:  #e67e22;
+    --gray:    #555;
+    --light:   #f5f7fa;
+    --border:  #dce3ec;
+    --radius:  10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--light);
+    color: #222;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 24px rgba(0,0,0,.10);
+    padding: 36px 40px;
+    width: 100%;
+    max-width: 760px;
+  }
+
+  h1 { font-size: 1.7rem; color: var(--blue); margin-bottom: 6px; }
+  h2 { font-size: 1.25rem; color: var(--blue); margin-bottom: 16px; }
+
+  .subtitle { color: var(--gray); font-size: .95rem; margin-bottom: 24px; }
+
+  /* ── Start screen ── */
+  #start-screen label { display: block; margin-bottom: 6px; font-weight: 600; }
+  #start-screen input[type=number] {
+    width: 120px; padding: 10px 14px; border: 2px solid var(--border);
+    border-radius: var(--radius); font-size: 1rem;
+  }
+  #start-screen input:focus { outline: none; border-color: var(--blue); }
+  .info-box {
+    background: var(--blue-lt); border-left: 4px solid var(--blue);
+    border-radius: 6px; padding: 14px 18px; margin: 20px 0; font-size: .92rem;
+    line-height: 1.6;
+  }
+  .info-box strong { color: var(--blue); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px; border: none; border-radius: var(--radius);
+    font-size: 1rem; font-weight: 600; cursor: pointer; transition: all .15s;
+  }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: #1d4f7a; }
+  .btn-skip {
+    background: #f0f0f0; color: var(--gray);
+    margin-right: 10px;
+  }
+  .btn-skip:hover { background: #ddd; }
+  .btn-next { background: var(--blue); color: #fff; }
+  .btn-next:hover { background: #1d4f7a; }
+  .btn-next:disabled { background: #aac4de; cursor: default; }
+  .btn-restart { background: var(--blue); color: #fff; margin-top: 24px; }
+  .btn-restart:hover { background: #1d4f7a; }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 22px;
+  }
+  .progress-bar-bg {
+    flex: 1; height: 8px; background: var(--border); border-radius: 99px;
+  }
+  .progress-bar-fill {
+    height: 8px; background: var(--blue); border-radius: 99px;
+    transition: width .3s ease;
+  }
+  .progress-label { font-size: .85rem; color: var(--gray); white-space: nowrap; }
+
+  /* ── Score live ── */
+  .score-live {
+    display: flex; gap: 16px; margin-bottom: 22px; flex-wrap: wrap;
+  }
+  .score-chip {
+    padding: 5px 14px; border-radius: 99px; font-size: .88rem; font-weight: 600;
+  }
+  .chip-correct  { background: #d5f5e3; color: #1e8449; }
+  .chip-wrong    { background: #fadbd8; color: #922b21; }
+  .chip-skip     { background: #fdebd0; color: #935116; }
+  .chip-total    { background: var(--blue-lt); color: var(--blue); }
+
+  /* ── Question ── */
+  .question-nr  { font-size: .85rem; color: var(--gray); margin-bottom: 6px; }
+  .question-tag {
+    display: inline-block; padding: 2px 10px; border-radius: 99px;
+    background: var(--blue-lt); color: var(--blue);
+    font-size: .78rem; font-weight: 600; margin-bottom: 12px; letter-spacing: .4px;
+  }
+  .question-text {
+    font-size: 1.08rem; font-weight: 600; line-height: 1.55;
+    margin-bottom: 22px;
+  }
+
+  /* ── Options ── */
+  .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+  .option {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 18px; border: 2px solid var(--border);
+    border-radius: var(--radius); cursor: pointer;
+    transition: border-color .15s, background .15s;
+    font-size: .97rem; line-height: 1.45;
+  }
+  .option:hover:not(.locked) { border-color: var(--blue); background: var(--blue-lt); }
+
+  .option.selected:not(.locked) { border-color: var(--blue); background: var(--blue-lt); }
+
+  .option.correct  { border-color: var(--green)!important; background: #eafaf1!important; }
+  .option.wrong    { border-color: var(--red)!important;   background: #fdedec!important; }
+  .option.reveal   { border-color: var(--green)!important; background: #eafaf1!important; }
+
+  .option-letter {
+    width: 28px; height: 28px; min-width: 28px;
+    border-radius: 50%; background: var(--blue-lt); color: var(--blue);
+    font-weight: 700; font-size: .85rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s;
+  }
+  .option.selected:not(.locked) .option-letter { background: var(--blue); color: #fff; }
+  .option.correct  .option-letter { background: var(--green); color: #fff; }
+  .option.wrong    .option-letter { background: var(--red);   color: #fff; }
+  .option.reveal   .option-letter { background: var(--green); color: #fff; }
+
+  /* ── Feedback banner ── */
+  .feedback {
+    padding: 12px 18px; border-radius: var(--radius);
+    font-size: .95rem; font-weight: 600; margin-bottom: 20px;
+    display: none;
+  }
+  .feedback.correct { background: #d5f5e3; color: #1e8449; display: block; }
+  .feedback.wrong   { background: #fadbd8; color: #922b21; display: block; }
+  .feedback.skip    { background: #fdebd0; color: #935116; display: block; }
+
+  .feedback .explanation { font-weight: 400; margin-top: 4px; font-size: .9rem; }
+
+  /* ── Action row ── */
+  .action-row { display: flex; align-items: center; gap: 0; }
+
+  /* ── Results ── */
+  #results-screen .score-big {
+    text-align: center; margin-bottom: 28px;
+  }
+  .score-number {
+    font-size: 3.5rem; font-weight: 700; color: var(--blue);
+    line-height: 1;
+  }
+  .score-max { font-size: 1.1rem; color: var(--gray); }
+  .score-pct {
+    font-size: 1.4rem; font-weight: 600;
+    margin-top: 6px;
+  }
+
+  .result-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-bottom: 28px;
+  }
+  .result-card {
+    border-radius: var(--radius); padding: 16px; text-align: center;
+  }
+  .result-card .rc-num  { font-size: 2rem; font-weight: 700; }
+  .result-card .rc-lbl  { font-size: .85rem; margin-top: 4px; }
+  .rc-correct { background: #d5f5e3; color: #1e8449; }
+  .rc-wrong   { background: #fadbd8; color: #922b21; }
+  .rc-skip    { background: #fdebd0; color: #935116; }
+
+  /* ── Review ── */
+  .review-toggle {
+    background: none; border: 2px solid var(--blue); color: var(--blue);
+    border-radius: var(--radius); padding: 10px 22px;
+    font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 20px;
+  }
+  .review-list { display: none; }
+  .review-list.open { display: block; }
+
+  .review-item {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 18px; margin-bottom: 10px; font-size: .92rem;
+  }
+  .review-item.ri-correct { border-left: 4px solid var(--green); }
+  .review-item.ri-wrong   { border-left: 4px solid var(--red); }
+  .review-item.ri-skip    { border-left: 4px solid var(--orange); }
+
+  .ri-q { font-weight: 600; margin-bottom: 6px; }
+  .ri-meta { font-size: .85rem; color: var(--gray); }
+  .ri-tag  { font-size: .78rem; font-weight: 600; color: var(--blue);
+             background: var(--blue-lt); padding: 2px 8px; border-radius: 99px; }
+
+  .hidden { display: none!important; }
+
+  @media (max-width: 520px) {
+    .card { padding: 24px 18px; }
+    .result-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- ═══════════════ START SCREEN ═══════════════ -->
+  <div id="start-screen">
+    <h1>📊 Databeheer Quiz</h1>
+    <p class="subtitle">KU Leuven · Industriële Ingenieurswetenschappen · 2025-2026</p>
+
+    <div class="info-box">
+      <strong>Puntensysteem (giscorrectie):</strong><br>
+      ✅ Juist antwoord: <strong>+1 punt</strong><br>
+      ❌ Fout antwoord: <strong>−⅓ punt</strong><br>
+      ⏭ Overgeslagen: <strong>0 punten</strong>
+    </div>
+
+    <label for="q-count">Aantal vragen:</label>
+    <input type="number" id="q-count" min="1" max="55" value="20">
+    <span style="color:var(--gray);font-size:.9rem;margin-left:10px">max 55</span>
+
+    <br><br>
+    <button class="btn btn-primary" onclick="startQuiz()">▶ Start Quiz</button>
+  </div>
+
+  <!-- ═══════════════ QUIZ SCREEN ═══════════════ -->
+  <div id="quiz-screen" class="hidden">
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <span class="progress-label" id="progress-label">1 / 20</span>
+    </div>
+
+    <div class="score-live">
+      <span class="score-chip chip-correct" id="live-correct">✅ 0 juist</span>
+      <span class="score-chip chip-wrong"   id="live-wrong">❌ 0 fout</span>
+      <span class="score-chip chip-skip"    id="live-skip">⏭ 0 skip</span>
+      <span class="score-chip chip-total"   id="live-total">Score: 0.00</span>
+    </div>
+
+    <div class="question-nr" id="q-nr">Vraag 1</div>
+    <div class="question-tag" id="q-tag">CATEGORIE</div>
+    <div class="question-text" id="q-text">Laadt…</div>
+
+    <div class="options" id="options-container"></div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="action-row">
+      <button class="btn btn-skip" id="btn-skip" onclick="skipQuestion()">⏭ Overslaan</button>
+      <button class="btn btn-next" id="btn-next" onclick="nextQuestion()" disabled>Volgende →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ RESULTS SCREEN ═══════════════ -->
+  <div id="results-screen" class="hidden">
+    <h2>🏁 Resultaten</h2>
+
+    <div class="score-big">
+      <div class="score-number" id="res-score">0.00</div>
+      <div class="score-max" id="res-max">/ 0 punten</div>
+      <div class="score-pct" id="res-pct"></div>
+    </div>
+
+    <div class="result-grid">
+      <div class="result-card rc-correct">
+        <div class="rc-num" id="res-correct">0</div>
+        <div class="rc-lbl">Juist (+1)</div>
+      </div>
+      <div class="result-card rc-wrong">
+        <div class="rc-num" id="res-wrong">0</div>
+        <div class="rc-lbl">Fout (−⅓)</div>
+      </div>
+      <div class="result-card rc-skip">
+        <div class="rc-num" id="res-skip">0</div>
+        <div class="rc-lbl">Overgeslagen (0)</div>
+      </div>
+    </div>
+
+    <button class="review-toggle" onclick="toggleReview()">📋 Toon alle antwoorden</button>
+    <div class="review-list" id="review-list"></div>
+
+    <br>
+    <button class="btn btn-restart" onclick="restartQuiz()">🔄 Nieuwe Quiz</button>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  VRAGENBANK  (55 vragen, alle studoforum topics + gelijkaardig)
+// ═══════════════════════════════════════════════════════════
+const ALL_QUESTIONS = [
+
+// ── WEB BEACONS & COOKIES ──────────────────────────────────
+{
+  cat: "Privacy & Tracking",
+  q: "Wat is een web beacon?",
+  opts: [
+    "Een klein, onzichtbaar 1×1 pixel afbeeldingetje dat bijhoudt of een e-mail of webpagina geopend werd",
+    "Een versleuteld sessiecookie dat browserdata opslaat",
+    "Een JavaScript-script dat klikgedrag analyseert",
+    "Een verborgen hyperlink in een e-mail"
+  ],
+  correct: 0,
+  explain: "Een web beacon (ook wel tracking pixel) is een transparante afbeelding van 1×1 pixel. Wanneer je de pagina of e-mail opent, wordt de afbeelding geladen van een externe server – zo weet de afzender dat je het bericht geopend hebt."
+},
+{
+  cat: "Privacy & Tracking",
+  q: "Een online webshop plaatst een cookie met daarin jouw gebruikersnaam versleuteld. Wat kun je over dit cookie zeggen?",
+  opts: [
+    "Het cookie bevat jouw wachtwoord in leesbare tekst",
+    "Het cookie is een sessiecookie dat automatisch verdwijnt bij sluiten van de browser",
+    "Het cookie bevat persoonsgegevens en valt onder de GDPR",
+    "Het cookie is veilig omdat het versleuteld is en kan nooit misbruikt worden"
+  ],
+  correct: 2,
+  explain: "Ook versleutelde persoonsgegevens zijn persoonsgegevens onder de GDPR zolang de versleuteling omkeerbaar is. De webshop heeft een wettelijke grondslag nodig om dit cookie te plaatsen."
+},
+{
+  cat: "Privacy & Tracking",
+  q: "Welk type cookie verdwijnt automatisch wanneer je de browser sluit?",
+  opts: [
+    "Persistent cookie",
+    "Session cookie",
+    "Third-party cookie",
+    "Secure cookie"
+  ],
+  correct: 1,
+  explain: "Een session cookie heeft geen vervaldatum en wordt alleen in het geheugen opgeslagen. Het verdwijnt zodra de browsersessie eindigt."
+},
+
+// ── ASYMMETRISCHE ENCRYPTIE ────────────────────────────────
+{
+  cat: "Encryptie",
+  q: "Bij asymmetrische encryptie: welke sleutel gebruikt de VERZENDER om een bericht te versleutelen dat bestemd is voor de ontvanger?",
+  opts: [
+    "De private key van de verzender",
+    "De public key van de ontvanger",
+    "Een gedeelde symmetrische sleutel",
+    "De private key van de ontvanger"
+  ],
+  correct: 1,
+  explain: "Bij asymmetrische encryptie versleutelt de verzender met de PUBLIC KEY van de ontvanger. Alleen de ontvanger kan ontsleutelen met zijn eigen PRIVATE KEY."
+},
+{
+  cat: "Encryptie",
+  q: "Welke sleutel gebruikt de ontvanger om een versleuteld bericht te ontsleutelen bij asymmetrische encryptie?",
+  opts: [
+    "Zijn eigen public key",
+    "De public key van de verzender",
+    "Zijn eigen private key",
+    "Een gedeelde symmetrische sleutel"
+  ],
+  correct: 2,
+  explain: "De ontvanger gebruikt zijn PRIVATE KEY om het bericht te ontsleutelen dat versleuteld werd met zijn public key."
+},
+{
+  cat: "Encryptie",
+  q: "Wat is het fundamentele verschil tussen symmetrische en asymmetrische encryptie?",
+  opts: [
+    "Symmetrisch gebruikt twee sleutels; asymmetrisch gebruikt één sleutel",
+    "Symmetrisch gebruikt dezelfde sleutel voor ver- en ontsleuteling; asymmetrisch gebruikt een publiek-privaat sleutelpaar",
+    "Asymmetrisch is altijd sneller dan symmetrisch",
+    "Symmetrisch kan alleen worden gebruikt voor wachtwoorden, niet voor bestanden"
+  ],
+  correct: 1,
+  explain: "Symmetrische encryptie: één gedeelde geheime sleutel voor beide partijen. Asymmetrische encryptie: publieke sleutel om te versleutelen, private sleutel om te ontsleutelen."
+},
+{
+  cat: "Encryptie",
+  q: "HTTPS gebruikt asymmetrische encryptie voor de handshake en daarna symmetrische encryptie voor de data. Waarom?",
+  opts: [
+    "Symmetrische encryptie is onveiliger maar goedkoper",
+    "Asymmetrische encryptie kan geen grote hoeveelheden data verwerken",
+    "Symmetrische encryptie is veel sneller voor grote hoeveelheden data; asymmetrisch is nodig om de sessiesleutel veilig uit te wisselen",
+    "Symmetrische encryptie is alleen geschikt voor afbeeldingen"
+  ],
+  correct: 2,
+  explain: "Asymmetrische encryptie is rekenintensief. Na de handshake (waarbij veilig een gedeelde sessiesleutel uitgewisseld wordt) schakelt HTTPS over naar snellere symmetrische encryptie voor de daadwerkelijke data."
+},
+
+// ── HASH-FUNCTIES ──────────────────────────────────────────
+{
+  cat: "Encryptie",
+  q: "Welke uitspraak over hash-functies is JUIST?",
+  opts: [
+    "Hash-functies zijn omkeerbaar: met voldoende rekenkracht kun je altijd de originele input terughalen",
+    "Hash-functies produceren altijd output van variabele lengte afhankelijk van de input",
+    "Hash-functies zijn eenrichtingsverkeer: het is computationeel onhaalbaar om de input te achterhalen uit de hash",
+    "Hash-functies worden gebruikt voor symmetrische encryptie van bestanden"
+  ],
+  correct: 2,
+  explain: "Een hash-functie is eenrichtingsverkeer (one-way). Gegeven een hash kun je de originele input niet terughalen. Dit is nuttig voor wachtwoordopslag: sla de hash op, niet het wachtwoord zelf."
+},
+{
+  cat: "Encryptie",
+  q: "Een website slaat wachtwoorden op als gehashte waarden. Wat is het voordeel hiervan?",
+  opts: [
+    "Het maakt de wachtwoorden versleuteld maar opvraagbaar voor admins",
+    "Als de database gelekt wordt, zijn de originele wachtwoorden niet direct leesbaar",
+    "Het versnelt het inlogproces aanzienlijk",
+    "Het elimineert de noodzaak van HTTPS"
+  ],
+  correct: 1,
+  explain: "Door hashing op te slaan in plaats van het plaintext wachtwoord, blijven wachtwoorden onleesbaar bij een datalek. Bij het inloggen wordt het ingevoerde wachtwoord gehasht en vergeleken met de opgeslagen hash."
+},
+
+// ── CAESAR-CIPHER ──────────────────────────────────────────
+{
+  cat: "Encryptie",
+  q: "Wat is de Caesar(3)-encryptie van het woord \"DATA\"?",
+  opts: [
+    "EBUB",
+    "GDWD",
+    "FCVC",
+    "EBTA"
+  ],
+  correct: 1,
+  explain: "Caesar(3) verschuift elke letter 3 plaatsen: D→G, A→D, T→W, A→D. Resultaat: GDWD."
+},
+{
+  cat: "Encryptie",
+  q: "Welke Caesar-encryptie geeft van \"ABC\" → \"DEF\"?",
+  opts: [
+    "Caesar(1)",
+    "Caesar(2)",
+    "Caesar(3)",
+    "Caesar(4)"
+  ],
+  correct: 2,
+  explain: "A(1)→D(4), B(2)→E(5), C(3)→F(6): verschuiving van 3 plaatsen = Caesar(3)."
+},
+
+// ── COMPRESSIE ─────────────────────────────────────────────
+{
+  cat: "Compressie",
+  q: "Waarom heeft JPEG doorgaans een hogere compressieverhouding dan ZIP voor afbeeldingen?",
+  opts: [
+    "JPEG gebruikt een geavanceerdere en nieuwere algoritme dan ZIP",
+    "Afbeeldingen bevatten vaak grote zones met gelijkaardige kleurpixels, wat goed comprimeerbaar is",
+    "ZIP kan helemaal geen afbeeldingen comprimeren",
+    "JPEG werkt verliesvrij, wat altijd beter is dan ZIP"
+  ],
+  correct: 1,
+  explain: "JPEG maakt gebruik van het feit dat naburige pixels in een foto vaak gelijkaardige kleuren hebben. Dit laat toe om hoge compressieverhouding te bereiken. JPEG is ook lossy (verliesrijke) compressie, wat extra compressieruimte geeft."
+},
+{
+  cat: "Compressie",
+  q: "Welk type compressie gebruikt JPEG?",
+  opts: [
+    "Verliesvrije (lossless) compressie",
+    "Verliesrijke (lossy) compressie",
+    "Run-length encoding zonder verlies",
+    "Symmetrische compressie"
+  ],
+  correct: 1,
+  explain: "JPEG is een lossy formaat: er gaat bij compressie informatie verloren (onmerkbaar voor het menselijk oog bij gemiddelde kwaliteit). ZIP en PNG zijn voorbeelden van lossless compressie."
+},
+{
+  cat: "Compressie",
+  q: "Gegeven woordenboek: {A→1, THE→2, CAT→3, SAT→4, ON→5, MAT→6}. Wat is de gecomprimeerde versie van \"THE CAT SAT ON THE MAT\"?",
+  opts: [
+    "2 3 4 5 2 6",
+    "2 3 4 5 1 6",
+    "1 3 4 5 2 6",
+    "2 A 4 5 2 6"
+  ],
+  correct: 0,
+  explain: "THE→2, CAT→3, SAT→4, ON→5, THE→2, MAT→6. Resultaat: 2 3 4 5 2 6."
+},
+{
+  cat: "Compressie",
+  q: "Gegeven woordenboek: {IS→1, THIS→2, A→3, TEST→4}. Wat is de gecomprimeerde versie van \"THIS IS A TEST\"?",
+  opts: [
+    "2 1 3 4",
+    "1 2 3 4",
+    "2 3 1 4",
+    "THIS 1 3 4"
+  ],
+  correct: 0,
+  explain: "THIS→2, IS→1, A→3, TEST→4. Resultaat: 2 1 3 4."
+},
+
+// ── MACHINE LEARNING ───────────────────────────────────────
+{
+  cat: "Machine Learning",
+  q: "Wat betekent \"overfitting\" in machine learning?",
+  opts: [
+    "Het model presteert slecht op zowel trainings- als testdata",
+    "Het model presteert goed op trainingsdata maar slecht op nieuwe testdata",
+    "Het model is te eenvoudig en leert de patronen niet",
+    "Het model heeft te weinig trainingsdata gekregen"
+  ],
+  correct: 1,
+  explain: "Overfitting: het model heeft de trainingsdata 'gememoriseerd' inclusief ruis, maar generaliseert slecht naar nieuwe data. Hoge train-accuracy, lage test-accuracy."
+},
+{
+  cat: "Machine Learning",
+  q: "Wat is \"underfitting\" in machine learning?",
+  opts: [
+    "Het model presteert goed op trainingsdata maar slecht op testdata",
+    "Het model presteert slecht op zowel trainings- als testdata",
+    "Het model heeft te veel parameters en is te complex",
+    "Het model overfit op de testdata"
+  ],
+  correct: 1,
+  explain: "Underfitting: het model is te eenvoudig om de onderliggende patronen te leren. Resultaat: slechte prestaties op zowel trainings- als testdata."
+},
+{
+  cat: "Machine Learning",
+  q: "Wat is het verschil tussen supervised en unsupervised learning?",
+  opts: [
+    "Supervised learning is altijd sneller dan unsupervised learning",
+    "Supervised learning gebruikt gelabelde data; unsupervised learning werkt zonder labels",
+    "Unsupervised learning vereist gelabelde trainingsdata",
+    "Er is geen praktisch verschil; de termen zijn synoniem"
+  ],
+  correct: 1,
+  explain: "Supervised: gelabelde voorbeelden (input + correct output). Unsupervised: geen labels, het model zoekt zelf structuren/clusters. Classificatie is supervised; clustering is unsupervised."
+},
+{
+  cat: "Machine Learning",
+  q: "Welk type machine learning taak is 'lineaire regressie'?",
+  opts: [
+    "Classificatie (supervised)",
+    "Clustering (unsupervised)",
+    "Regressie (supervised) voor het voorspellen van continue waarden",
+    "Reinforcement learning"
+  ],
+  correct: 2,
+  explain: "Lineaire regressie is een supervised learning methode die continue uitkomsten voorspelt (bv. prijs, temperatuur). Het wordt getraind met gelabelde data (input-output paren)."
+},
+
+// ── DATA VISUALISATIE ──────────────────────────────────────
+{
+  cat: "Data Visualisatie",
+  q: "In welke volgorde neemt de perceptuele nauwkeurigheid af bij het aflezen van kwantitatieve informatie? (meest → minst precies)",
+  opts: [
+    "Volume > Oppervlak > Lengte",
+    "Lengte > Oppervlak > Volume",
+    "Oppervlak > Lengte > Volume",
+    "Lengte > Volume > Oppervlak"
+  ],
+  correct: 1,
+  explain: "Mensen lezen lengtes (staafdiagrammen) het nauwkeurigst af, daarna oppervlakken (cirkeldiagrammen), en volumina het minst nauwkeurig. Dit is de perceptiehiërarchie van Cleveland & McGill."
+},
+{
+  cat: "Data Visualisatie",
+  q: "Welk grafiektype gebruik je het best om de verdeling van één numerieke variabele te visualiseren?",
+  opts: [
+    "Sankey diagram",
+    "Boxplot of histogram",
+    "Spreidingsdiagram (scatterplot)",
+    "Warmtekaart (heatmap)"
+  ],
+  correct: 1,
+  explain: "Voor univariate (één variabele) numerieke data gebruik je een histogram (frequentieverdeling) of boxplot (mediaan, kwartielen, uitschieters)."
+},
+{
+  cat: "Data Visualisatie",
+  q: "Wat toont een Sankey-diagram?",
+  opts: [
+    "De verdeling van één variabele in percentielen",
+    "De correlatie tussen twee numerieke variabelen",
+    "Stromingen, overdrachten of flows tussen categorieën",
+    "De evolutie van een variabele over de tijd"
+  ],
+  correct: 2,
+  explain: "Een Sankey-diagram visualiseert hoe hoeveelheden (energie, geld, gebruikers…) stromen van de ene categorie naar de andere. De breedte van de stromen is proportioneel met de hoeveelheid."
+},
+{
+  cat: "Data Visualisatie",
+  q: "Welk grafiektype gebruik je voor de relatie (correlatie) tussen twee numerieke variabelen?",
+  opts: [
+    "Boxplot",
+    "Cirkeldiagram (pie chart)",
+    "Spreidingsdiagram (scatterplot)",
+    "Staafdiagram (bar chart)"
+  ],
+  correct: 2,
+  explain: "Een scatterplot zet twee numerieke variabelen tegenover elkaar, waarbij elk punt een observatie is. Dit toont of er een verband (correlatie) bestaat."
+},
+{
+  cat: "Data Visualisatie",
+  q: "Wat toont een boxplot?",
+  opts: [
+    "De correlatie tussen twee variabelen",
+    "De frequentie van elke waarde in een dataset",
+    "De mediaan, kwartielen (Q1, Q3) en eventuele uitschieters van een numerieke variabele",
+    "Het gemiddelde en de standaardafwijking als enige statistieken"
+  ],
+  correct: 2,
+  explain: "Een boxplot toont: mediaan (lijn in de doos), Q1 en Q3 (grenzen van de doos), de whiskers (spreiding) en outliers (punten buiten de whiskers)."
+},
+
+// ── BIG DATA – 4 V'S ───────────────────────────────────────
+{
+  cat: "Big Data",
+  q: "Welke zijn de 4 V's van Big Data?",
+  opts: [
+    "Volume, Variatie, Velocity, Veracity",
+    "Volume, Validatie, Velocity, Veiligheid",
+    "Vermogen, Variatie, Velocity, Veracity",
+    "Volume, Variatie, Verwerking, Veracity"
+  ],
+  correct: 0,
+  explain: "Volume (hoeveelheid), Variatie (verscheidenheid van formats), Velocity (snelheid van generatie), Veracity (betrouwbaarheid van data)."
+},
+{
+  cat: "Big Data",
+  q: "Wat beschrijft 'Veracity' in de context van Big Data?",
+  opts: [
+    "De totale hoeveelheid data in een systeem",
+    "De snelheid waarmee nieuwe data gegenereerd wordt",
+    "De betrouwbaarheid en kwaliteit (correctheid) van de data",
+    "De verscheidenheid van dataformaten (video, tekst, sensor…)"
+  ],
+  correct: 2,
+  explain: "Veracity = betrouwbaarheid/correctheid. Niet alle big data is kwalitatief goed. Het gaat over de mate waarin je de data kunt vertrouwen voor analyses."
+},
+{
+  cat: "Big Data",
+  q: "Welke V van Big Data beschrijft het feit dat data in realtime gegenereerd en verwerkt wordt, bv. bij een productieproces?",
+  opts: [
+    "Volume",
+    "Variatie",
+    "Velocity",
+    "Veracity"
+  ],
+  correct: 2,
+  explain: "Velocity = snelheid. Data wordt steeds sneller gegenereerd (sensoren, sociale media, IoT). Realtime verwerking is een uitdaging bij hoge velocity."
+},
+
+// ── DATABASE DESIGN / ERD ──────────────────────────────────
+{
+  cat: "Database Design",
+  q: "In een 1:n relatie, waar wordt de FOREIGN KEY geplaatst?",
+  opts: [
+    "In de tabel aan de 'één'-kant",
+    "In de tabel aan de 'veel'-kant",
+    "In een aparte koppeltabel",
+    "In beide tabellen"
+  ],
+  correct: 1,
+  explain: "Bij 1:n: de FK staat ALTIJD in de 'veel'-tabel. Voorbeeld: een branch heeft meerdere escape rooms → branchID (FK) staat in de EscapeRoom-tabel, niet in Branch."
+},
+{
+  cat: "Database Design",
+  q: "Wat doe je bij een n:m relatie in een relationele database?",
+  opts: [
+    "Je plaatst een FK in één van beide tabellen",
+    "Je plaatst FK's in beide tabellen (kruislings)",
+    "Je maakt een aparte koppeltabel met de PKs van beide tabellen als FKs",
+    "Je combineert de twee tabellen in één grote tabel"
+  ],
+  correct: 2,
+  explain: "n:m relatie → koppeltabel (ook: associatieve tabel, junctietabel). De koppeltabel bevat minstens de PKs van beide tabellen als FKs, eventueel aangevuld met extra attributen."
+},
+{
+  cat: "Database Design",
+  q: "Een student kan meerdere fietsen hebben; elke fiets behoort aan maximaal één student. Hoe modelleer je dit?",
+  opts: [
+    "n:m relatie met koppeltabel",
+    "1:n relatie: studentID als FK in de Fiets-tabel",
+    "1:1 relatie: fietsID als FK in de Student-tabel",
+    "n:m relatie waarbij beide tabellen elkaars PK als FK bevatten"
+  ],
+  correct: 1,
+  explain: "Student heeft meerdere Fietsen (1:n). FK = studentID staat in de Fiets-tabel (de 'veel'-kant)."
+},
+{
+  cat: "Database Design",
+  q: "Wat is een primaire sleutel (PRIMARY KEY)?",
+  opts: [
+    "Een kolom die lege (NULL) waarden mag bevatten",
+    "Een kolom of combinatie van kolommen die elke rij uniek identificeert en nooit NULL mag zijn",
+    "Een verwijzing naar een kolom in een andere tabel",
+    "Een versleutelde versie van het record-ID"
+  ],
+  correct: 1,
+  explain: "PRIMARY KEY: uniek + NOT NULL. Identificeert elke rij eenduidig. Een tabel kan slechts één PK hebben, maar die kan bestaan uit meerdere kolommen (composite key)."
+},
+{
+  cat: "Database Design",
+  q: "Wat is een associatieve entiteit?",
+  opts: [
+    "Een entiteit die geen eigen primaire sleutel heeft en afhankelijk is van een andere entiteit",
+    "Een entiteit die een n:m-relatie omzet naar twee 1:n-relaties en extra data over de relatie opslaat",
+    "Een entiteit die twee andere entiteiten vervangt",
+    "Een zwakke entiteit die altijd verwijst naar zichzelf"
+  ],
+  correct: 1,
+  explain: "Associatieve entiteit (koppeltabel): zet een n:m relatie om in twee 1:n relaties. Ze kan extra attributen bevatten die bij de relatie horen (bv. datum, prijs van een boeking)."
+},
+{
+  cat: "Database Design",
+  q: "Welke uitspraak over de eerste normaalvorm (1NV) is JUIST?",
+  opts: [
+    "Alle niet-sleutelattributen zijn volledig afhankelijk van de volledige primaire sleutel",
+    "Er zijn geen herhalende groepen: elke cel bevat één atomaire waarde",
+    "Er zijn geen transitieve afhankelijkheden tussen niet-sleutelattributen",
+    "De tabel heeft altijd een enkelvoudige (niet-samengestelde) primaire sleutel"
+  ],
+  correct: 1,
+  explain: "1NV: geen herhalende groepen, elke cel bevat één waarde. Bv. een kolom 'telefoonnummers' met meerdere nummers per cel schendt 1NV."
+},
+{
+  cat: "Database Design",
+  q: "Welke volgorde is VERPLICHT bij het aanmaken van tabellen met foreign keys in MySQL?",
+  opts: [
+    "De volgorde maakt niet uit; MySQL lost dit automatisch op",
+    "Eerst de tabellen die FKs bevatten, daarna de gerefereerde tabellen",
+    "Eerst de gerefereerde tabellen aanmaken, daarna de tabellen die FKs bevatten",
+    "Alle tabellen aanmaken zonder FKs, daarna FKs toevoegen via ALTER TABLE"
+  ],
+  correct: 2,
+  explain: "Een FK verwijst naar een PK in een andere tabel. Die andere tabel MOET al bestaan. Volgorde: eerst de 'ouder'-tabellen zonder FKs, dan de tabellen die naar hen verwijzen."
+},
+{
+  cat: "Database Design",
+  q: "Wat is een zwakke entiteit (weak entity)?",
+  opts: [
+    "Een entiteit met weinig attributen",
+    "Een entiteit die geen eigen sleutelattribuut kan definiëren en altijd gekoppeld is aan een sterke entiteit",
+    "Een entiteit die enkel relaties modeleert zonder eigen attributen",
+    "Een entiteit die automatisch verwijderd wordt als er geen instanties zijn"
+  ],
+  correct: 1,
+  explain: "Zwakke entiteit: kan zichzelf niet identificeren zonder de sterke entiteit. Bv. een 'OrderRegel' bestaat niet zonder een 'Order'. De PK van de zwakke entiteit bevat altijd de PK van de sterke entiteit."
+},
+
+// ── SQL DDL / DML ──────────────────────────────────────────
+{
+  cat: "SQL",
+  q: "Wat is het verschil tussen DDL en DML in SQL?",
+  opts: [
+    "DDL staat voor Data Display Language; DML voor Data Management Language",
+    "DDL (Data Definition Language) definieert de structuur; DML (Data Manipulation Language) bewerkt de data",
+    "DML definieert de structuur; DDL bewerkt de data",
+    "Er is geen verschil; het zijn synoniemen"
+  ],
+  correct: 1,
+  explain: "DDL: CREATE, ALTER, DROP (structuur van tabellen). DML: SELECT, INSERT, UPDATE, DELETE (data in tabellen)."
+},
+{
+  cat: "SQL",
+  q: "Welk SQL-keyword gebruik je om dubbele rijen te verwijderen uit het resultaat?",
+  opts: [
+    "UNIQUE",
+    "DISTINCT",
+    "GROUP BY",
+    "FILTER"
+  ],
+  correct: 1,
+  explain: "SELECT DISTINCT kolom FROM tabel → geeft alleen unieke waarden terug."
+},
+{
+  cat: "SQL",
+  q: "Wat is het verschil tussen WHERE en HAVING in SQL?",
+  opts: [
+    "Ze zijn volledig uitwisselbaar",
+    "WHERE filtert vóór aggregatie; HAVING filtert ná aggregatie (op gegroepeerde resultaten)",
+    "HAVING filtert vóór aggregatie; WHERE filtert ná aggregatie",
+    "WHERE werkt alleen met JOINs; HAVING alleen met subqueries"
+  ],
+  correct: 1,
+  explain: "WHERE filtert individuele rijen VOOR GROUP BY. HAVING filtert gegroepeerde resultaten NA GROUP BY. Je kunt HAVING niet gebruiken zonder GROUP BY en aggregatiefuncties."
+},
+{
+  cat: "SQL",
+  q: "Welk aggregatiefunctie gebruik je om het totaal aantal rijen in een groep te tellen, inclusief NULL-waarden?",
+  opts: [
+    "SUM(*)",
+    "COUNT(*)",
+    "TOTAL(*)",
+    "COUNT(kolomnaam)"
+  ],
+  correct: 1,
+  explain: "COUNT(*) telt ALLE rijen inclusief NULLs. COUNT(kolomnaam) telt alleen rijen waar die kolom niet NULL is."
+},
+{
+  cat: "SQL",
+  q: "Wat doet een LEFT JOIN?",
+  opts: [
+    "Geeft alleen rijen terug waarbij er een overeenkomst is in beide tabellen",
+    "Geeft alle rijen van de LINKER tabel terug, aangevuld met overeenkomende rijen uit de rechter tabel (NULL als er geen match is)",
+    "Geeft alle rijen van de RECHTER tabel terug",
+    "Combineert alle rijen van beide tabellen zonder matching-conditie"
+  ],
+  correct: 1,
+  explain: "LEFT JOIN: alle rijen van de linker tabel, gecombineerd met overeenkomende rijen van de rechter tabel. Als er geen match is, worden de rechter-kolommen gevuld met NULL."
+},
+{
+  cat: "SQL",
+  q: "Je wilt alle studenten ophalen die een gemiddelde evaluatie > 7 hebben. Welke query is CORRECT?",
+  opts: [
+    "SELECT student FROM subscription WHERE AVG(evaluation) > 7",
+    "SELECT student, AVG(evaluation) FROM subscription HAVING AVG(evaluation) > 7",
+    "SELECT student, AVG(evaluation) FROM subscription GROUP BY student HAVING AVG(evaluation) > 7",
+    "SELECT student FROM subscription GROUP BY student WHERE AVG(evaluation) > 7"
+  ],
+  correct: 2,
+  explain: "Stap 1: GROUP BY student (groepeer per student). Stap 2: HAVING AVG(evaluation) > 7 (filter op aggregaat). WHERE kan niet gebruikt worden met aggregatiefuncties."
+},
+
+// ── DBMS ───────────────────────────────────────────────────
+{
+  cat: "DBMS",
+  q: "Wat is het voordeel van een index op een databasekolom?",
+  opts: [
+    "Het versnelt schrijfoperaties (INSERT/UPDATE) aanzienlijk",
+    "Het versnelt zoekoperaties (SELECT/WHERE) ten koste van extra opslagruimte en langzamere schrijfoperaties",
+    "Het zorgt voor automatische versleuteling van de kolom",
+    "Het voorkomt dat dubbele waarden worden ingevoerd"
+  ],
+  correct: 1,
+  explain: "Een index is een datastructuur (bv. B-tree) die snel opzoeken mogelijk maakt. Nadeel: extra opslagruimte nodig en INSERT/UPDATE worden iets trager omdat de index bijgewerkt moet worden."
+},
+{
+  cat: "DBMS",
+  q: "Wat zijn de ACID-eigenschappen van een database-transactie?",
+  opts: [
+    "Atomiciteit, Consistentie, Isolatie, Duurzaamheid",
+    "Authenticatie, Compressie, Integriteit, Distributie",
+    "Automatisering, Caching, Indexering, Data-integriteit",
+    "Atomiciteit, Caching, Isolatie, Distributie"
+  ],
+  correct: 0,
+  explain: "ACID: Atomiciteit (alles of niets), Consistentie (data blijft geldig), Isolatie (transacties interfereren niet), Duurzaamheid (na commit blijft data bewaard)."
+},
+{
+  cat: "DBMS",
+  q: "Wat is een database 'View'?",
+  opts: [
+    "Een fysieke kopie van een tabel opgeslagen op schijf",
+    "Een type index voor snellere queries",
+    "Een virtuele tabel gebaseerd op de resultaten van een opgeslagen SELECT-query",
+    "Een back-up van de volledige database"
+  ],
+  correct: 2,
+  explain: "Een VIEW is een opgeslagen query die als virtuele tabel gebruikt kan worden. De data wordt niet fysiek opgeslagen; bij elke aanroep wordt de onderliggende query uitgevoerd."
+},
+{
+  cat: "DBMS",
+  q: "Wat is een stored procedure in een database?",
+  opts: [
+    "Een automatisch uitgevoerde actie bij een INSERT/UPDATE/DELETE",
+    "Een opgeslagen en herbruikbare set SQL-statements die je kan aanroepen met parameters",
+    "Een index die automatisch aangemaakt wordt bij een query",
+    "Een versleutelde versie van een SQL-query"
+  ],
+  correct: 1,
+  explain: "Een stored procedure is vooraf gecompileerde SQL-code opgeslagen in de database. Je roept hem aan met CALL procedure_naam(). Voordelen: herbruikbaar, efficiënt, veiliger (minder SQL-injectie risico)."
+},
+
+// ── GDPR / PRIVACY ─────────────────────────────────────────
+{
+  cat: "Privacy & GDPR",
+  q: "Wat is het verschil tussen geanonimiseerde en gepseudonimiseerde data?",
+  opts: [
+    "Er is geen verschil; beide zijn volledig beschermd door de GDPR",
+    "Geanonimiseerde data kan niet meer herleid worden naar een persoon; gepseudonimiseerde data eventueel wel (met aanvullende info)",
+    "Gepseudonimiseerde data kan niet meer herleid worden; geanonimiseerde data kan dat nog steeds",
+    "Gepseudonimisering is altijd veiliger dan anonimisering"
+  ],
+  correct: 1,
+  explain: "Geanonimiseerde data: volledig onomkeerbaar losgekoppeld van de persoon → GDPR niet van toepassing. Gepseudonimiseerde data: naam vervangen door pseudoniem, maar met aanvullende sleutel opnieuw koppelbaar → GDPR is nog steeds van toepassing."
+},
+{
+  cat: "Privacy & GDPR",
+  q: "Een bedrijf wil het e-mail- en internetverkeer van werknemers monitoren. Wat geldt hiervoor?",
+  opts: [
+    "Dit is altijd toegestaan; werknemers hebben geen privacy op het werk",
+    "Dit is volledig verboden in België",
+    "Dit is mogelijk, maar werknemers moeten vooraf geïnformeerd worden en er moet een wettelijke grondslag zijn (bv. opgenomen in arbeidsreglement)",
+    "GDPR is niet van toepassing op werknemers"
+  ],
+  correct: 2,
+  explain: "Monitoring van werknemers is mogelijk maar aan strenge voorwaarden gebonden: transparantie (werknemers moeten weten dat ze gemonitord worden), proportionaliteit en een wettelijke basis (bv. collectieve arbeidsovereenkomst)."
+},
+{
+  cat: "Privacy & GDPR",
+  q: "Welke zijn de 6 wettelijke grondslagen (lawful bases) voor gegevensverwerking onder de GDPR?",
+  opts: [
+    "Toestemming, contract, wettelijke verplichting, vitaal belang, publieke taak, gerechtvaardigd belang",
+    "Toestemming, hashing, pseudonimisering, encryptie, contract, archivering",
+    "Toestemming, contract, datacompressie, anonimisering, vitaal belang, publicatie",
+    "Toestemming, contract, beveiligingsplicht, audit, vitaal belang, wettelijke verplichting"
+  ],
+  correct: 0,
+  explain: "De 6 GDPR grondslagen: (1) Toestemming, (2) Uitvoering contract, (3) Wettelijke verplichting, (4) Vitale belangen, (5) Publieke taak, (6) Gerechtvaardigd belang."
+},
+
+// ── GEMENGDE DATABASEVRAGEN ────────────────────────────────
+{
+  cat: "Database Design",
+  q: "Welke SQL-constraint zorgt ervoor dat een kolom geen lege waarden (NULL) mag bevatten?",
+  opts: [
+    "UNIQUE",
+    "PRIMARY KEY",
+    "NOT NULL",
+    "DEFAULT"
+  ],
+  correct: 2,
+  explain: "NOT NULL dwingt af dat elke rij een waarde moet hebben voor die kolom. PRIMARY KEY impliceert ook NOT NULL, maar voor gewone kolommen gebruik je NOT NULL expliciet."
+},
+{
+  cat: "Database Design",
+  q: "Waarvoor gebruik je het datatype VARCHAR(100) in MySQL?",
+  opts: [
+    "Een geheel getal van maximaal 100",
+    "Een variabele tekstreeks van maximaal 100 tekens",
+    "Een vaste tekstreeks van altijd precies 100 tekens",
+    "Een decimaal getal met 100 cijfers"
+  ],
+  correct: 1,
+  explain: "VARCHAR(n) = variabele tekst tot n tekens. Neemt alleen de ruimte in van de werkelijke tekst + 1-2 bytes overhead. Gebruik CHAR(n) voor tekst van vaste lengte."
+},
+{
+  cat: "Database Design",
+  q: "Wat is de functie van AUTO_INCREMENT in MySQL?",
+  opts: [
+    "Het comprimeert de kolom automatisch",
+    "Het genereert automatisch een oplopende integer als primaire sleutel",
+    "Het zorgt dat waarden automatisch gevalideerd worden",
+    "Het maakt de kolom verplicht in te vullen"
+  ],
+  correct: 1,
+  explain: "AUTO_INCREMENT: bij elke INSERT wordt de PK automatisch verhoogd (1, 2, 3, …). Je hoeft de waarde niet zelf op te geven. Wordt bijna altijd gebruikt met INT PRIMARY KEY."
+},
+{
+  cat: "SQL",
+  q: "Wat is het resultaat van 'SELECT DISTINCT department FROM employee'?",
+  opts: [
+    "Alle rijen uit de employee-tabel",
+    "Alle unieke departement-namen (zonder duplicaten)",
+    "Het aantal werknemers per departement",
+    "De departement-namen gesorteerd alfabetisch"
+  ],
+  correct: 1,
+  explain: "DISTINCT verwijdert duplicaten uit het resultaat. Als 5 werknemers op 'Sales' staan, verschijnt 'Sales' maar één keer."
+},
+{
+  cat: "SQL",
+  q: "Je wilt het MINIMUM salaris van managers ophalen. Welke query is correct?",
+  opts: [
+    "SELECT MIN(salary) FROM employee WHERE func = 'manager'",
+    "SELECT salary FROM employee WHERE func = 'manager' AND salary = MIN(salary)",
+    "SELECT MIN FROM employee HAVING func = 'manager'",
+    "SELECT LOWEST(salary) FROM employee WHERE func = 'manager'"
+  ],
+  correct: 0,
+  explain: "Aggregatiefuncties zoals MIN(), MAX(), AVG() gebruik je in de SELECT-clausule. WHERE filtert de rijen voor de aggregatie. Optie B is fout: je kunt MIN() niet in WHERE gebruiken."
+},
+
+// ── EXTRA DATABEHEER-THEORIE ───────────────────────────────
+{
+  cat: "Database Design",
+  q: "Wat is normalisatie in database-design?",
+  opts: [
+    "Het samenvoegen van alle tabellen in één grote tabel voor betere prestaties",
+    "Een proces waarbij je de datastructuur optimaliseert om redundantie te verminderen en data-integriteit te garanderen",
+    "Het versleutelen van gevoelige kolommen in een tabel",
+    "Het aanmaken van indexen op alle kolommen"
+  ],
+  correct: 1,
+  explain: "Normalisatie: structureer data om redundantie (herhaalde data) te verminderen en anomalieën te voorkomen bij INSERT/UPDATE/DELETE. Dit gebeurt via de normaalvormen (1NV, 2NV, 3NV)."
+},
+{
+  cat: "DBMS",
+  q: "Wat is het CAP-theorema in de context van gedistribueerde databases?",
+  opts: [
+    "Consistency, Atomicity, Performance: de drie doelstellingen van elke database",
+    "Een database kan niet tegelijk Consistency, Availability én Partition tolerance garanderen; slechts twee van de drie",
+    "Create, Alter, Procedure: de drie DDL-operaties in SQL",
+    "Een veiligheidsprincipe dat versleuteling, authenticatie en privacy combineert"
+  ],
+  correct: 1,
+  explain: "CAP-theorema (Brewer): een gedistribueerd systeem kan niet tegelijk alle drie garanderen: Consistency (alle nodes zien dezelfde data), Availability (altijd bereikbaar), Partition Tolerance (werkt bij netwerkstoringen)."
+},
+{
+  cat: "Database Design",
+  q: "Een Booking-tabel heeft een composite PRIMARY KEY (partyID, roomID, bookingDate, startTime). Wat betekent dit?",
+  opts: [
+    "Er zijn vier aparte tabellen: één per kolom",
+    "De combinatie van alle vier kolommen moet uniek zijn; elke kolom afzonderlijk mag duplicaten hebben",
+    "Elke kolom afzonderlijk moet uniek zijn in de tabel",
+    "De tabel heeft geen echte primaire sleutel"
+  ],
+  correct: 1,
+  explain: "Composite PK: de COMBINATIE van kolommen identificeert een rij uniek. Dezelfde kamer kan op dezelfde dag meerdere keren geboekt worden (op verschillende tijdstippen), maar de combinatie (kamer + datum + tijd + party) moet uniek zijn."
+}
+
+]; // END ALL_QUESTIONS
+
+// ═══════════════════════════════════════════════════════════
+//  QUIZ LOGICA
+// ═══════════════════════════════════════════════════════════
+
+let selectedQuestions = [];
+let currentIdx = 0;
+let stats = { correct: 0, wrong: 0, skip: 0 };
+let score = 0;
+let results = [];
+let answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  const input = document.getElementById('q-count');
+  let n = parseInt(input.value) || 20;
+  n = Math.max(1, Math.min(n, ALL_QUESTIONS.length));
+  input.value = n;
+
+  selectedQuestions = shuffle(ALL_QUESTIONS).slice(0, n);
+  // Shuffle the answer options for each question
+  selectedQuestions = selectedQuestions.map(q => {
+    const indices = shuffle([0,1,2,3]);
+    const newOpts = indices.map(i => q.opts[i]);
+    const newCorrect = indices.indexOf(q.correct);
+    return { ...q, opts: newOpts, correct: newCorrect };
+  });
+
+  currentIdx = 0;
+  stats = { correct: 0, wrong: 0, skip: 0 };
+  score = 0;
+  results = [];
+  answered = false;
+
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('results-screen').classList.add('hidden');
+  document.getElementById('quiz-screen').classList.remove('hidden');
+
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = selectedQuestions[currentIdx];
+  const total = selectedQuestions.length;
+  const pct = (currentIdx / total) * 100;
+
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${currentIdx + 1} / ${total}`;
+  document.getElementById('q-nr').textContent = `Vraag ${currentIdx + 1} van ${total}`;
+  document.getElementById('q-tag').textContent = q.cat.toUpperCase();
+  document.getElementById('q-text').textContent = q.q;
+
+  const container = document.getElementById('options-container');
+  container.innerHTML = '';
+
+  const letters = ['A', 'B', 'C', 'D'];
+  q.opts.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    `;
+    div.addEventListener('click', () => selectOption(i));
+    container.appendChild(div);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').innerHTML = '';
+  document.getElementById('btn-skip').disabled = false;
+  document.getElementById('btn-skip').style.display = '';
+  document.getElementById('btn-next').disabled = true;
+  updateLiveScore();
+}
+
+function selectOption(idx) {
+  if (answered) return;
+  // Toggle selection
+  const options = document.querySelectorAll('.option');
+  options.forEach(o => o.classList.remove('selected'));
+  options[idx].classList.add('selected');
+  document.getElementById('btn-next').disabled = false;
+}
+
+function getSelectedIdx() {
+  const options = document.querySelectorAll('.option');
+  for (let o of options) {
+    if (o.classList.contains('selected')) return parseInt(o.dataset.idx);
+  }
+  return -1;
+}
+
+function confirmAnswer(selectedIdx) {
+  if (answered) return;
+  answered = true;
+  const q = selectedQuestions[currentIdx];
+  const options = document.querySelectorAll('.option');
+  const feedback = document.getElementById('feedback');
+
+  // Lock all options
+  options.forEach(o => o.classList.add('locked'));
+  document.getElementById('btn-skip').style.display = 'none';
+
+  if (selectedIdx === q.correct) {
+    options[selectedIdx].classList.add('correct');
+    score += 1;
+    stats.correct++;
+    feedback.className = 'feedback correct';
+    feedback.innerHTML = `✅ <strong>Juist! +1 punt</strong><div class="explanation">${q.explain}</div>`;
+    results.push({ q, selected: selectedIdx, status: 'correct' });
+  } else {
+    options[selectedIdx].classList.add('wrong');
+    options[q.correct].classList.add('reveal');
+    score -= 1/3;
+    stats.wrong++;
+    feedback.className = 'feedback wrong';
+    feedback.innerHTML = `❌ <strong>Fout. −⅓ punt.</strong> Het juiste antwoord was <strong>${['A','B','C','D'][q.correct]}</strong>.<div class="explanation">${q.explain}</div>`;
+    results.push({ q, selected: selectedIdx, status: 'wrong' });
+  }
+  updateLiveScore();
+  document.getElementById('btn-next').disabled = false;
+  document.getElementById('btn-next').textContent = currentIdx + 1 < selectedQuestions.length ? 'Volgende →' : '🏁 Toon Resultaten';
+}
+
+function skipQuestion() {
+  if (answered) return;
+  answered = true;
+  const q = selectedQuestions[currentIdx];
+  const options = document.querySelectorAll('.option');
+  const feedback = document.getElementById('feedback');
+
+  options.forEach(o => o.classList.add('locked'));
+  options[q.correct].classList.add('reveal');
+  document.getElementById('btn-skip').style.display = 'none';
+
+  stats.skip++;
+  feedback.className = 'feedback skip';
+  feedback.innerHTML = `⏭ <strong>Overgeslagen. 0 punten.</strong> Het juiste antwoord was <strong>${['A','B','C','D'][q.correct]}</strong>.<div class="explanation">${q.explain}</div>`;
+  results.push({ q, selected: -1, status: 'skip' });
+
+  updateLiveScore();
+  document.getElementById('btn-next').disabled = false;
+  document.getElementById('btn-next').textContent = currentIdx + 1 < selectedQuestions.length ? 'Volgende →' : '🏁 Toon Resultaten';
+}
+
+function nextQuestion() {
+  const selectedIdx = getSelectedIdx();
+  if (!answered) {
+    if (selectedIdx === -1) { skipQuestion(); return; }
+    confirmAnswer(selectedIdx);
+    return;
+  }
+  // Move to next
+  currentIdx++;
+  if (currentIdx >= selectedQuestions.length) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function updateLiveScore() {
+  document.getElementById('live-correct').textContent = `✅ ${stats.correct} juist`;
+  document.getElementById('live-wrong').textContent   = `❌ ${stats.wrong} fout`;
+  document.getElementById('live-skip').textContent    = `⏭ ${stats.skip} skip`;
+  document.getElementById('live-total').textContent   = `Score: ${score.toFixed(2)}`;
+}
+
+function showResults() {
+  document.getElementById('quiz-screen').classList.add('hidden');
+  document.getElementById('results-screen').classList.remove('hidden');
+
+  const total = selectedQuestions.length;
+  const pct = ((score / total) * 100).toFixed(1);
+
+  document.getElementById('res-score').textContent = score.toFixed(2);
+  document.getElementById('res-max').textContent = `/ ${total} punten`;
+
+  let pctColor = score/total >= 0.5 ? 'var(--green)' : score/total >= 0.3 ? 'var(--orange)' : 'var(--red)';
+  document.getElementById('res-pct').innerHTML =
+    `<span style="color:${pctColor}">${pct}%</span>`;
+
+  document.getElementById('res-correct').textContent = stats.correct;
+  document.getElementById('res-wrong').textContent   = stats.wrong;
+  document.getElementById('res-skip').textContent    = stats.skip;
+
+  // Build review
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  results.forEach((r, i) => {
+    const letters = ['A','B','C','D'];
+    const cls = r.status === 'correct' ? 'ri-correct' : r.status === 'wrong' ? 'ri-wrong' : 'ri-skip';
+    const icon = r.status === 'correct' ? '✅' : r.status === 'wrong' ? '❌' : '⏭';
+    const selectedText = r.selected === -1 ? 'Overgeslagen' :
+      `${letters[r.selected]}: ${r.q.opts[r.selected]}`;
+    const correctText = `${letters[r.q.correct]}: ${r.q.opts[r.q.correct]}`;
+
+    const div = document.createElement('div');
+    div.className = `review-item ${cls}`;
+    div.innerHTML = `
+      <div class="ri-q">${i+1}. ${r.q.q}</div>
+      <div class="ri-meta">
+        <span class="ri-tag">${r.q.cat}</span>
+        &nbsp; ${icon} Jouw antwoord: <em>${selectedText}</em><br>
+        ${r.status !== 'correct' ? `✅ Juist antwoord: <em>${correctText}</em><br>` : ''}
+        <span style="color:var(--gray);font-size:.85rem">${r.q.explain}</span>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleReview() {
+  const list = document.getElementById('review-list');
+  const btn = document.querySelector('.review-toggle');
+  list.classList.toggle('open');
+  btn.textContent = list.classList.contains('open') ? '📋 Verberg antwoorden' : '📋 Toon alle antwoorden';
+}
+
+function restartQuiz() {
+  document.getElementById('results-screen').classList.add('hidden');
+  document.getElementById('start-screen').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
